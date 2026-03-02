@@ -79,9 +79,12 @@ class PopupMenu(QWidget):
         self.setLayout(layout)
 
     def handle_click(self, mode):
-        # Emit signal and hide immediately
-        self.comm.option_selected.emit(mode)
+        # Hide immediately and process events to ensure focus shifts back
         self.hide()
+        QApplication.processEvents()
+        
+        # Now notify the main logic
+        self.comm.option_selected.emit(mode)
 
     def show_at_cursor(self):
         pos = QCursor.pos()
@@ -143,8 +146,9 @@ class VoiceCoachPro:
         print(f"[DEBUG] Processing mode: {mode}", flush=True)
         
         # Step E: Allow the OS to return focus to the previous window
+        # We wait slightly longer and more deliberately
         print("[DEBUG] Waiting for focus recovery...", flush=True)
-        time.sleep(0.4) # Increased delay for better reliability
+        time.sleep(0.5) 
         
         if not self.captured_text:
             print("[DEBUG] ERROR: No text captured.", flush=True)
@@ -163,14 +167,19 @@ class VoiceCoachPro:
             print("[DEBUG] Updating clipboard...", flush=True)
             pyperclip.copy(refined_text)
             
-            # Give the clipboard a moment
-            time.sleep(0.3)
+            # Give the clipboard a significant moment to settle
+            time.sleep(0.4)
             
-            print("[DEBUG] Performing robust paste...", flush=True)
-            # We use a very deliberate sequence to ensure the paste overwrites the selection
-            self.controller.release(keyboard.Key.ctrl_l) # Just in case
-            time.sleep(0.1)
+            print("[DEBUG] Performing Hyper-Robust Paste...", flush=True)
+            # Ensure all modifiers are released before starting the paste
+            self.controller.release(keyboard.Key.ctrl_l)
+            self.controller.release(keyboard.Key.ctrl_r)
+            self.controller.release(keyboard.Key.alt_l)
+            self.controller.release(keyboard.Key.alt_r)
+            self.controller.release(keyboard.Key.cmd)
+            time.sleep(0.2)
             
+            # Use 'tap' for 'v' while holding Ctrl_L
             with self.controller.pressed(keyboard.Key.ctrl_l):
                 time.sleep(0.2)
                 self.controller.press('v')
