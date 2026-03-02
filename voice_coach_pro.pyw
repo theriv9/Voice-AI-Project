@@ -96,9 +96,18 @@ class PopupMenu(QWidget):
         self.setFocus()
 
     def focusOutEvent(self, event):
-        # Close if user clicks away
-        self.hide()
+        # We only want to close if the focus actually leaves the application 
+        # (e.g. user clicks on another window like OneNote)
+        # However, clicking a button within the menu technically causes a focus flicker.
+        # We check if the menu or its children still have focus after a tiny delay.
+        from PyQt6.QtCore import QTimer
+        QTimer.singleShot(150, self.check_focus_and_close)
         super().focusOutEvent(event)
+
+    def check_focus_and_close(self):
+        # If the menu is still visible and doesn't have focus, and wasn't closed by a button click
+        if self.isVisible() and not self.isActiveWindow():
+            self.hide()
 
 class VoiceCoachPro:
     def __init__(self):
