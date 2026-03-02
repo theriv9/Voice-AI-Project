@@ -40,8 +40,6 @@ class PopupMenu(QWidget):
 
         options = [
             ("✨ Refine (Professional)", "professional"),
-            ("📝 Summarize", "summarize"),
-            ("✂️ Shorten", "shorten"),
             ("😊 Friendly Tone", "friendly")
         ]
 
@@ -50,18 +48,18 @@ class PopupMenu(QWidget):
         self.container.setStyleSheet("""
             QWidget#container {
                 background-color: #2c2c2c;
-                border: 1px solid #444;
-                border-radius: 8px;
+                border: 2px solid #555;
+                border-radius: 10px;
             }
             QPushButton {
                 background-color: transparent;
                 color: #ffffff;
                 border: none;
-                padding: 10px 20px;
+                padding: 12px 24px;
                 text-align: left;
                 font-family: 'Segoe UI', 'Arial', sans-serif;
                 font-size: 14px;
-                border-radius: 4px;
+                border-radius: 6px;
             }
             QPushButton:hover {
                 background-color: #444;
@@ -69,8 +67,8 @@ class PopupMenu(QWidget):
         """)
         
         container_layout = QVBoxLayout(self.container)
-        container_layout.setContentsMargins(4, 4, 4, 4)
-        container_layout.setSpacing(2)
+        container_layout.setContentsMargins(6, 6, 6, 6)
+        container_layout.setSpacing(4)
 
         for text, mode in options:
             btn = QPushButton(text)
@@ -87,7 +85,7 @@ class PopupMenu(QWidget):
 
     def show_at_cursor(self):
         pos = QCursor.pos()
-        # Ensure it fits on screen (simple offset)
+        # Offset slightly so the mouse isn't directly on top of the first button
         self.move(pos.x() - 20, pos.y() - 10)
         self.show()
         self.raise_()
@@ -111,10 +109,6 @@ class VoiceCoachPro:
         base_instr = "You are a professional voice and grammar coach. "
         if mode == "professional":
             return base_instr + "Take this raw transcription, remove all filler words (ums, ahs, likes), fix grammar, and make the tone professional yet friendly. Return ONLY the refined text."
-        elif mode == "summarize":
-            return base_instr + "Summarize the following text into concise bullet points. Return ONLY the summary."
-        elif mode == "shorten":
-            return base_instr + "Shorten the following text significantly while keeping the core meaning. Return ONLY the shortened version."
         elif mode == "friendly":
             return base_instr + "Rewrite the following text to have a warm, friendly, and approachable tone. Return ONLY the rewritten text."
         return base_instr
@@ -126,17 +120,18 @@ class VoiceCoachPro:
         
         for attempt in range(4):
             print(f"[DEBUG] Copy attempt {attempt + 1}...", flush=True)
+            # Ensure no modifiers are stuck
             self.controller.release(keyboard.Key.ctrl_l)
             self.controller.release(keyboard.Key.alt_l)
             self.controller.release(keyboard.Key.f11)
-            time.sleep(0.2) # Wait for release
+            time.sleep(0.2)
             
             with self.controller.pressed(keyboard.Key.ctrl_l):
                 time.sleep(0.1)
                 self.controller.tap('c')
                 time.sleep(0.1)
             
-            time.sleep(0.8) # Wait for clipboard
+            time.sleep(0.8) # Wait for clipboard synchronization
             text = pyperclip.paste().strip()
             if text and len(text) > 1 and text.lower() not in ['c', 'v', 'a']:
                 return text
@@ -146,8 +141,10 @@ class VoiceCoachPro:
 
     def process_selection(self, mode):
         print(f"[DEBUG] Processing mode: {mode}", flush=True)
-        # Sequence Delay
-        time.sleep(0.25) # Allow focus to return to original app
+        
+        # Step E: Allow the OS to return focus to the previous window
+        print("[DEBUG] Waiting for focus recovery...", flush=True)
+        time.sleep(0.4) # Increased delay for better reliability
         
         if not self.captured_text:
             print("[DEBUG] ERROR: No text captured.", flush=True)
@@ -162,14 +159,26 @@ class VoiceCoachPro:
             )
             refined_text = response.text.strip()
             
-            print("[DEBUG] Updating clipboard and pasting...", flush=True)
+            # Step G: Paste/Replace
+            print("[DEBUG] Updating clipboard...", flush=True)
             pyperclip.copy(refined_text)
+            
+            # Give the clipboard a moment
             time.sleep(0.3)
             
-            with self.controller.pressed(keyboard.Key.ctrl_l):
-                self.controller.tap('v')
+            print("[DEBUG] Performing robust paste...", flush=True)
+            # We use a very deliberate sequence to ensure the paste overwrites the selection
+            self.controller.release(keyboard.Key.ctrl_l) # Just in case
+            time.sleep(0.1)
             
-            print("[DEBUG] SUCCESS!", flush=True)
+            with self.controller.pressed(keyboard.Key.ctrl_l):
+                time.sleep(0.2)
+                self.controller.press('v')
+                time.sleep(0.1)
+                self.controller.release('v')
+                time.sleep(0.1)
+            
+            print("[DEBUG] SUCCESS: Text refined and pasted!", flush=True)
         except Exception as e:
             print(f"[DEBUG] GEMINI ERROR: {e}", flush=True)
 
