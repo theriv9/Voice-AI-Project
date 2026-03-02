@@ -123,18 +123,16 @@ class VoiceCoachPro:
         
         for attempt in range(4):
             print(f"[DEBUG] Copy attempt {attempt + 1}...", flush=True)
-            # Ensure no modifiers are stuck
+            # Faster modifier release and capture
             self.controller.release(keyboard.Key.ctrl_l)
             self.controller.release(keyboard.Key.alt_l)
             self.controller.release(keyboard.Key.f11)
-            time.sleep(0.2)
+            time.sleep(0.05)
             
             with self.controller.pressed(keyboard.Key.ctrl_l):
-                time.sleep(0.1)
                 self.controller.tap('c')
-                time.sleep(0.1)
             
-            time.sleep(0.8) # Wait for clipboard synchronization
+            time.sleep(0.4) # Wait for clipboard synchronization (reduced)
             text = pyperclip.paste().strip()
             if text and len(text) > 1 and text.lower() not in ['c', 'v', 'a']:
                 return text
@@ -145,10 +143,8 @@ class VoiceCoachPro:
     def process_selection(self, mode):
         print(f"[DEBUG] Processing mode: {mode}", flush=True)
         
-        # Step E: Allow the OS to return focus to the previous window
-        # We wait slightly longer and more deliberately
-        print("[DEBUG] Waiting for focus recovery...", flush=True)
-        time.sleep(0.5) 
+        # Reduced delay for focus recovery
+        time.sleep(0.2) 
         
         if not self.captured_text:
             print("[DEBUG] ERROR: No text captured.", flush=True)
@@ -164,39 +160,23 @@ class VoiceCoachPro:
             refined_text = response.text.strip()
             
             # Step G: Paste/Replace
-            print("[DEBUG] Updating clipboard...", flush=True)
             pyperclip.copy(refined_text)
+            time.sleep(0.15)
             
-            # Give the clipboard a significant moment to settle
-            time.sleep(0.4)
-            
-            print("[DEBUG] Performing Hyper-Robust Paste...", flush=True)
-            # Ensure all modifiers are released before starting the paste
+            print("[DEBUG] Performing Fast Paste...", flush=True)
             self.controller.release(keyboard.Key.ctrl_l)
-            self.controller.release(keyboard.Key.ctrl_r)
-            self.controller.release(keyboard.Key.alt_l)
-            self.controller.release(keyboard.Key.alt_r)
-            self.controller.release(keyboard.Key.cmd)
-            time.sleep(0.2)
+            time.sleep(0.05)
             
-            # Use 'tap' for 'v' while holding Ctrl_L
             with self.controller.pressed(keyboard.Key.ctrl_l):
-                time.sleep(0.2)
-                self.controller.press('v')
-                time.sleep(0.1)
-                self.controller.release('v')
-                time.sleep(0.1)
+                self.controller.tap('v')
             
             print("[DEBUG] SUCCESS: Text refined and pasted!", flush=True)
         except Exception as e:
             print(f"[DEBUG] GEMINI ERROR: {e}", flush=True)
 
     def on_hotkey(self):
-        # This is called from the pynput thread
-        print("\n[DEBUG] --- Hotkey triggered! ---", flush=True)
-        
-        # Give the user a moment to lift their fingers
-        time.sleep(0.3)
+        # Finger-lifting buffer reduced
+        time.sleep(0.1)
         
         # Grab text
         self.captured_text = self.robust_copy()
