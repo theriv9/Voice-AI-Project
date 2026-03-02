@@ -93,6 +93,12 @@ class PopupMenu(QWidget):
         self.show()
         self.raise_()
         self.activateWindow()
+        self.setFocus()
+
+    def focusOutEvent(self, event):
+        # Close if user clicks away
+        self.hide()
+        super().focusOutEvent(event)
 
 class VoiceCoachPro:
     def __init__(self):
