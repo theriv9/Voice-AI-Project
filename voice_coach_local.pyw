@@ -13,8 +13,8 @@ from PyQt6.QtGui import QCursor, QFont
 # Load environment variables (kept for consistency, though API keys may not be needed for local)
 load_dotenv()
 
-# We'll use Llama 3.1 as the local backend
-LOCAL_MODEL_ID = "llama3.1"
+# We'll use Llama 3.2 1B for near-instantaneous local performance
+LOCAL_MODEL_ID = "llama3.2:1b"
 
 class Communicate(QObject):
     # Signals for thread-safe communication
