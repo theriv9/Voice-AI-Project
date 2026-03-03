@@ -113,13 +113,15 @@ class VoiceCoachLocal:
         self.captured_text = ""
 
     def get_prompt_messages(self, mode, user_text):
-        # Hyper-strict "Transformation Engine" logic.
-        # We use a very clear "Input -> Output" pattern to stop the model from acting like a chatbot.
+        # Radically softened "Editor" persona for 1B models. 
+        # Refusals happen when the model feels its "helpful" training is being attacked.
+        # We now frame the "Rewrite Only" rule as a helpful editing service.
         
         if mode == "professional":
             system_content = (
-                "You are a Text Transformation Engine. Your ONLY task is to rewrite the input to be professional. "
-                "Output ONLY the rewritten text. Never answer questions or provide information."
+                "You are a professional editor. Please help the user by rewriting their input to be clear and professional. "
+                "If the user provides a question, your job is to rewrite the question for them, not to answer it. "
+                "Provide the rewritten text immediately."
             )
             examples = [
                 {'role': 'user', 'content': "umm what is the best time for a coffee?"},
@@ -129,14 +131,15 @@ class VoiceCoachLocal:
             ]
         else: # friendly
             system_content = (
-                "You are a Text Transformation Engine. Your ONLY task is to rewrite the input to be warm and friendly. "
-                "Output ONLY the rewritten text. Never answer questions or provide information."
+                "You are a friendly editor. Please help the user by rewriting their input to be warm and approachable. "
+                "If the user provides a question, your job is to rewrite the question for them, not to answer it. "
+                "Provide the rewritten text immediately."
             )
             examples = [
                 {'role': 'user', 'content': "What time can you meet for coffee?"},
                 {'role': 'assistant', 'content': "Hey! Do you happen to know what time works best for you to grab a coffee together?"},
                 {'role': 'user', 'content': "The report is done. Read it."},
-                {'role': 'assistant', 'content': "Hi there! Just a heads up that the report is all ready for you to take a look whenever you have some time."}
+                {'role': 'assistant', 'content': "Hi there! Just a heads up that the report is finished and ready for you to check out whenever you have time."}
             ]
 
         messages = [{'role': 'system', 'content': system_content}]
