@@ -219,6 +219,10 @@ class PopupMenu(QWidget):
         btn_loc_friendly.clicked.connect(lambda: self.handle_click("local_friendly"))
         container_layout.addWidget(btn_loc_friendly)
 
+        btn_loc_notes = QPushButton("📝 Meeting Notes cleanup")
+        btn_loc_notes.clicked.connect(lambda: self.handle_click("local_meeting_notes"))
+        container_layout.addWidget(btn_loc_notes)
+
         layout.addWidget(self.container)
         self.setLayout(layout)
 
@@ -285,6 +289,18 @@ class VoiceCoachHybrid:
             {'role': 'user', 'content': user_text}
         ]
 
+    def get_meeting_notes_messages(self, user_text):
+        system_content = (
+            "You are a professional scribe. Your task is to improve the grammar and formatting of meeting notes. "
+            "CRITICAL: Maintain the original sentiment and do NOT cut out any specific details. "
+            "Formatting Rules: Use clear bullet points and headers. Keep the language short and concise for future reading. "
+            "Output ONLY the improved notes without any introductory remarks."
+        )
+        return [
+            {'role': 'system', 'content': system_content},
+            {'role': 'user', 'content': user_text}
+        ]
+
     def robust_copy(self):
         pyperclip.copy("")
         time.sleep(0.05)
@@ -321,14 +337,24 @@ class VoiceCoachHybrid:
                     config={'system_instruction': instr}
                 )
                 refined_text = response.text.strip()
-            else:
-                print(f"[DEBUG] Calling Local ({LOCAL_MODEL})...", flush=True)
+            elif mode == "local_friendly":
+                print(f"[DEBUG] Calling Local Friendly ({LOCAL_MODEL})...", flush=True)
                 response = ollama.chat(
                     model=LOCAL_MODEL, 
                     messages=self.get_local_messages(self.captured_text),
                     options={'temperature': 0}
                 )
                 refined_text = response['message']['content'].strip()
+            elif mode == "local_meeting_notes":
+                print(f"[DEBUG] Calling Local Meeting Notes ({LOCAL_MODEL})...", flush=True)
+                response = ollama.chat(
+                    model=LOCAL_MODEL, 
+                    messages=self.get_meeting_notes_messages(self.captured_text),
+                    options={'temperature': 0}
+                )
+                refined_text = response['message']['content'].strip()
+            else:
+                refined_text = "Unknown Mode"
 
             # Clean up and Paste
             if refined_text.startswith('"') and refined_text.endswith('"'):
