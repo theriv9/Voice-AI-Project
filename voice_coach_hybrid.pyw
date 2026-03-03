@@ -170,6 +170,9 @@ class VoiceCoachHybrid:
 
         try:
             if mode == "gemini_professional":
+                if not self.gemini_client:
+                    print("[DEBUG] ERROR: Gemini API Key missing or client not initialized.", flush=True)
+                    return
                 print(f"[DEBUG] Calling Gemini ({GEMINI_MODEL})...", flush=True)
                 instr = "Take this raw transcription, fix grammar, and make it professional yet friendly. Return ONLY refined text."
                 response = self.gemini_client.models.generate_content(
