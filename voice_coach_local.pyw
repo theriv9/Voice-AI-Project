@@ -113,12 +113,21 @@ class VoiceCoachLocal:
         self.captured_text = ""
 
     def get_system_prompt(self, mode):
-        base_instr = "You are a professional voice and grammar coach. "
+        # Llama 3.1 needs VERY firm instructions to avoid chatty introductions.
         if mode == "professional":
-            return base_instr + "Take this raw transcription, remove all filler words (ums, ahs, likes), fix grammar, and make the tone professional yet friendly. Return ONLY the refined text."
+            return (
+                "You are an AI that strictly refines text. Your task is to take a raw transcription, "
+                "remove all filler words (ums, ahs, likes, etc.), fix grammar, and make it professional. "
+                "CRITICAL: Output ONLY the refined text. Do *not* include any preamble, 'Here is the refined text', "
+                "or any other conversational filler or explanation. Your response must be NOTHING but the refined text."
+            )
         elif mode == "friendly":
-            return base_instr + "Rewrite the following text to have a warm, friendly, and approachable tone. Return ONLY the rewritten text."
-        return base_instr
+            return (
+                "You are an AI that strictly rewrites text. Your task is to make the input text warm and friendly. "
+                "CRITICAL: Output ONLY the rewritten text. Do *not* include any preamble, 'Here is the friendly version', "
+                "or any other conversational filler or explanation. Your response must be NOTHING but the rewritten text."
+            )
+        return ""
 
     def robust_copy(self):
         pyperclip.copy("")
@@ -151,17 +160,23 @@ class VoiceCoachLocal:
 
         print(f"[DEBUG] Contacting local Ollama ({LOCAL_MODEL_ID}) for {mode}...", flush=True)
         try:
-            # Use Ollama chat functionality
-            response = ollama.chat(model=LOCAL_MODEL_ID, messages=[
-                {
-                    'role': 'system',
-                    'content': self.get_system_prompt(mode),
-                },
-                {
-                    'role': 'user',
-                    'content': self.captured_text,
-                },
-            ])
+            # Use Ollama chat with strict parameters: temperature=0 for no hallucinations
+            response = ollama.chat(
+                model=LOCAL_MODEL_ID, 
+                messages=[
+                    {
+                        'role': 'system',
+                        'content': self.get_system_prompt(mode),
+                    },
+                    {
+                        'role': 'user',
+                        'content': self.captured_text,
+                    },
+                ],
+                options={
+                    'temperature': 0, # Makes the output deterministic and less talkative
+                }
+            )
             
             refined_text = response['message']['content'].strip()
             
