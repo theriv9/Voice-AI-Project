@@ -112,22 +112,45 @@ class VoiceCoachLocal:
         self.menu = PopupMenu(self.comm)
         self.captured_text = ""
 
-    def get_system_prompt(self, mode):
-        # Llama 3.1 needs VERY firm instructions to avoid chatty introductions.
+    def get_prompt_messages(self, mode, user_text):
+        # Few-Shot Prompting with specific "Question vs Rewrite" examples.
+        # This tells Llama: "If you see a question, REWRITE the question, do NOT answer it."
+        
         if mode == "professional":
-            return (
-                "You are an AI that strictly refines text. Your task is to take a raw transcription, "
-                "remove all filler words (ums, ahs, likes, etc.), fix grammar, and make it professional. "
-                "CRITICAL: Output ONLY the refined text. Do *not* include any preamble, 'Here is the refined text', "
-                "or any other conversational filler or explanation. Your response must be NOTHING but the refined text."
+            system_content = (
+                "You are a strict text transformation engine. Your ONLY mission is to rewrite the user's input "
+                "to be professional, clear, and grammatically correct. \n"
+                "RULES:\n"
+                "1. NEVER answer questions. If the input is a question, rewrite the question itself.\n"
+                "2. NEVER provide information or help. ONLY transform the text.\n"
+                "3. Output ONLY the rewritten text. No introductions, no quotes, no explanations."
             )
-        elif mode == "friendly":
-            return (
-                "You are an AI that strictly rewrites text. Your task is to make the input text warm and friendly. "
-                "CRITICAL: Output ONLY the rewritten text. Do *not* include any preamble, 'Here is the friendly version', "
-                "or any other conversational filler or explanation. Your response must be NOTHING but the rewritten text."
+            examples = [
+                {'role': 'user', 'content': "What is the capital of France?"},
+                {'role': 'assistant', 'content': "Could you please inform me which city serves as the capital of France?"},
+                {'role': 'user', 'content': "uh so I think we should like maybe go to the store"},
+                {'role': 'assistant', 'content': "I believe it would be best if we went to the store."}
+            ]
+        else: # friendly
+            system_content = (
+                "You are a text transformation engine. Your ONLY mission is to rewrite the user's input "
+                "to be warm, friendly, and approachable.\n"
+                "RULES:\n"
+                "1. NEVER answer questions. If the input is a question, rewrite the question itself.\n"
+                "2. NEVER provide information or help. ONLY transform the text.\n"
+                "3. Output ONLY the rewritten text. No introductions, no quotes, no explanations."
             )
-        return ""
+            examples = [
+                {'role': 'user', 'content': "How do I fix this bug?"},
+                {'role': 'assistant', 'content': "Hey! Do you happen to know the best way to get this bug fixed?"},
+                {'role': 'user', 'content': "The report is done. Read it."},
+                {'role': 'assistant', 'content': "Hi! Just wanted to let you know the report is finished and ready for you to check out."}
+            ]
+
+        messages = [{'role': 'system', 'content': system_content}]
+        messages.extend(examples)
+        messages.append({'role': 'user', 'content': user_text})
+        return messages
 
     def robust_copy(self):
         pyperclip.copy("")
@@ -160,25 +183,20 @@ class VoiceCoachLocal:
 
         print(f"[DEBUG] Contacting local Ollama ({LOCAL_MODEL_ID}) for {mode}...", flush=True)
         try:
-            # Use Ollama chat with strict parameters: temperature=0 for no hallucinations
+            # Use strict few-shot messages
             response = ollama.chat(
                 model=LOCAL_MODEL_ID, 
-                messages=[
-                    {
-                        'role': 'system',
-                        'content': self.get_system_prompt(mode),
-                    },
-                    {
-                        'role': 'user',
-                        'content': self.captured_text,
-                    },
-                ],
+                messages=self.get_prompt_messages(mode, self.captured_text),
                 options={
-                    'temperature': 0, # Makes the output deterministic and less talkative
+                    'temperature': 0, 
                 }
             )
             
             refined_text = response['message']['content'].strip()
+            
+            # Remove any accidental wrapping quotes if the model adds them
+            if refined_text.startswith('"') and refined_text.endswith('"'):
+                refined_text = refined_text[1:-1]
             
             print("[DEBUG] Updating clipboard...", flush=True)
             pyperclip.copy(refined_text)
