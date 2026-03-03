@@ -272,13 +272,21 @@ class VoiceCoachHybrid:
     def get_summary_prompt(self):
         return (
             "You are to receive text and your job is to summarize the sentiment of it to its entirety and improve spelling and grammar. "
-            "You are not to include any additional text other than the summarized text. "
+            "CRITICAL: Output ONLY the summarized text. "
+            "Do NOT include any introductory remarks, prefaces (like 'Here is a summarized version'), or conversational filler. "
+            "Do NOT wrap the output in quotation marks. "
             "You are setting this to a business setting so ensure professional tone, friendliness, and try to sound human-like."
         )
 
     def get_local_messages(self, user_text):
+        # Few-shot example helps 1B models stay within constraints
+        example_in = "Umm so basically we are meeting at 5pm to talk about the budget and stuff."
+        example_out = "We are scheduled to meet at 5:00 PM to discuss the budget."
+        
         return [
             {'role': 'system', 'content': self.get_summary_prompt()},
+            {'role': 'user', 'content': example_in},
+            {'role': 'assistant', 'content': example_out},
             {'role': 'user', 'content': user_text}
         ]
 
