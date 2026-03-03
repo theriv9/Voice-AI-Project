@@ -113,17 +113,15 @@ class VoiceCoachLocal:
         self.captured_text = ""
 
     def get_prompt_messages(self, mode, user_text):
-        # Hyper-Clinical transformation prompts.
-        # We tell the model it is a "Text Rewriting Engine" to move away from "Assistant" personas.
+        # Softened "Writing Assistant" persona. 
+        # Small models (1B) often refuse if told "Do NOT help" or "Do NOT be an assistant."
+        # We now use a more positive instruction while keeping the "Rewrite Only" rule.
         
         if mode == "professional":
             system_content = (
-                "You are a Text Transformation Engine. Your EXCLUSIVE task is to take the provided input "
-                "and output a grammatically correct, professional version of that EXACT content. \n"
-                "RULES:\n"
-                "1. NEVER answer a question. If the input is a question, you must REWRITE the question.\n"
-                "2. Do NOT provide help, do NOT search for information, and do NOT be an assistant.\n"
-                "3. Output ONLY the transformed text. Zero conversational filler."
+                "You are a professional writing assistant. Your task is to rewrite the input to be clear and professional. "
+                "If the input is a question, rewrite the question itself—do NOT answer it. "
+                "Output ONLY the rewritten text without ANY explanations or introductions."
             )
             examples = [
                 {'role': 'user', 'content': "umm what is the best time that works for your schedule to grab a coffee?"},
@@ -133,12 +131,9 @@ class VoiceCoachLocal:
             ]
         else: # friendly
             system_content = (
-                "You are a Text Transformation Engine. Your EXCLUSIVE task is to take the provided input "
-                "and output a warm, friendly version of that EXACT content.\n"
-                "RULES:\n"
-                "1. NEVER answer a question. If the input is a question, you must REWRITE the question.\n"
-                "2. Do NOT provide help, do NOT search for information, and do NOT be an assistant.\n"
-                "3. Output ONLY the transformed text. Zero conversational filler."
+                "You are a friendly writing assistant. Your task is to rewrite the input to be warm and approachable. "
+                "If the input is a question, rewrite the question itself—do NOT answer it. "
+                "Output ONLY the rewritten text without ANY explanations or introductions."
             )
             examples = [
                 {'role': 'user', 'content': "What time can you meet for coffee?"},
