@@ -225,6 +225,17 @@ class PopupMenu(QWidget):
         QApplication.processEvents()
         self.comm.option_selected.emit(mode)
 
+    # Make frameless window draggable
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self._drag_pos = event.globalPosition().toPoint() - self.frameGeometry().topLeft()
+            event.accept()
+
+    def mouseMoveEvent(self, event):
+        if event.buttons() == Qt.MouseButton.LeftButton:
+            self.move(event.globalPosition().toPoint() - self._drag_pos)
+            event.accept()
+
     def show_at_cursor(self):
         pos = QCursor.pos()
         self.move(pos.x() - 20, pos.y() - 10)
