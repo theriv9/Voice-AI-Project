@@ -113,15 +113,14 @@ class VoiceCoachLocal:
         self.captured_text = ""
 
     def get_prompt_messages(self, mode, user_text):
-        # Radically softened "Editor" persona for 1B models. 
-        # Refusals happen when the model feels its "helpful" training is being attacked.
-        # We now frame the "Rewrite Only" rule as a helpful editing service.
+        # Professional Editor persona with strict output formatting.
+        # We explicitly forbid introductory remarks to ensure a clean paste.
         
         if mode == "professional":
             system_content = (
-                "You are a professional editor. Please help the user by rewriting their input to be clear and professional. "
-                "If the user provides a question, your job is to rewrite the question for them, not to answer it. "
-                "Provide the rewritten text immediately."
+                "You are a professional editor. Help the user by rewriting their input to be clear and professional. "
+                "CRITICAL: Output ONLY the rewritten text. Do NOT include any 'Here is your text' or introductory remarks. "
+                "If the input is a question, rewrite the question itself, do not answer it."
             )
             examples = [
                 {'role': 'user', 'content': "umm what is the best time for a coffee?"},
@@ -131,9 +130,9 @@ class VoiceCoachLocal:
             ]
         else: # friendly
             system_content = (
-                "You are a friendly editor. Please help the user by rewriting their input to be warm and approachable. "
-                "If the user provides a question, your job is to rewrite the question for them, not to answer it. "
-                "Provide the rewritten text immediately."
+                "You are a friendly editor. Help the user by rewriting their input to be warm and approachable. "
+                "CRITICAL: Output ONLY the rewritten text. Do NOT include any 'Here is your text' or introductory remarks. "
+                "If the input is a question, rewrite the question itself, do not answer it."
             )
             examples = [
                 {'role': 'user', 'content': "What time can you meet for coffee?"},
