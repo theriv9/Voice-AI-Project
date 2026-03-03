@@ -272,16 +272,26 @@ class VoiceCoachHybrid:
     def get_summary_prompt(self):
         return (
             "You are to receive text and your job is to summarize the sentiment of it to its entirety and improve spelling and grammar. "
-            "CRITICAL: Output ONLY the summarized text. "
-            "Do NOT include any introductory remarks, prefaces (like 'Here is a summarized version'), or conversational filler. "
-            "Do NOT wrap the output in quotation marks. "
-            "You are setting this to a business setting so ensure professional tone, friendliness, and try to sound human-like."
+            "CRITICAL RULES: "
+            "1. **No Preface**: Do NOT include any introductory remarks or prefaces (like 'Here is a summarized version'). "
+            "2. **No Quotes**: Do NOT wrap the summary in quotation marks. "
+            "3. **Structure**: Use new lines and paragraphs to organize the summary if the content warrants it. "
+            "4. **Tone**: Use a professional business tone that is friendly and human-like. "
+            "Output ONLY the summarized text."
         )
 
     def get_local_messages(self, user_text):
-        # Few-shot example helps 1B models stay within constraints
-        example_in = "Umm so basically we are meeting at 5pm to talk about the budget and stuff."
-        example_out = "We are scheduled to meet at 5:00 PM to discuss the budget."
+        # Few-shot example with multi-line structure for clearer 1B model guidance
+        example_in = (
+            "Yeah so we had the meeting about the new office space. it was pretty good. "
+            "Dave says we move in April. Oh and the budget for furniture is 10k. "
+            "We also need to hire a new intern soon for the summer."
+        )
+        example_out = (
+            "We have confirmed a move to the new office space in April.\n\n"
+            "A budget of $10,000 has been allocated for new furniture. Additionally, "
+            "recruitment for a summer intern will begin shortly."
+        )
         
         return [
             {'role': 'system', 'content': self.get_summary_prompt()},
