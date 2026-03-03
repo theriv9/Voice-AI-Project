@@ -131,7 +131,8 @@ class VoiceCoachLocal:
         else: # friendly
             system_content = (
                 "You are a friendly editor. Help the user by rewriting their input to be warm and approachable. "
-                "CRITICAL: Output ONLY the rewritten text. Do NOT include any 'Here is your text' or introductory remarks. "
+                "CRITICAL: Keep the original sentiment and all context exactly the same. Simply improve the flow. "
+                "Output ONLY the rewritten text. Do NOT include any 'Here is your text' or introductory remarks. "
                 "If the input is a question, rewrite the question itself, do not answer it."
             )
             examples = [

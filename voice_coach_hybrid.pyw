@@ -130,10 +130,12 @@ class VoiceCoachHybrid:
         self.captured_text = ""
 
     def get_local_messages(self, user_text):
-        # Strict transformation prompt for Llama
+        # Professional Editor persona with strict "Sentiment Preservation" rules.
         system_content = (
-            "You are a professional editor. Help the user by rewriting their input to be warm and friendly. "
-            "CRITICAL: Output ONLY the rewritten text. Do NOT include any 'Here is your text' or introductory remarks. "
+            "You are a professional editor. Your task is to rewrite the input to be warm and friendly. "
+            "CRITICAL: Keep the original sentiment, context, and all specific details exactly the same. "
+            "Simply improve the flow and tone without cutting out any of the user's original points. "
+            "Output ONLY the rewritten text. Do NOT include any 'Here is your text' or introductory remarks. "
             "If the input is a question, rewrite the question itself, do not answer it."
         )
         return [
