@@ -89,7 +89,7 @@ class ReviewWindow(QWidget):
         container_layout.addWidget(title)
 
         self.text_area = QTextEdit()
-        self.text_area.setReadOnly(True)
+        self.text_area.setReadOnly(False)
         self.text_area.setMinimumHeight(150)
         self.text_area.setMinimumWidth(350)
         container_layout.addWidget(self.text_area)
@@ -111,9 +111,11 @@ class ReviewWindow(QWidget):
         self.setLayout(layout)
 
     def handle_accept(self):
+        # Capture the current (possibly edited) text from the text area
+        final_text = self.text_area.toPlainText().strip()
         self.hide()
         QApplication.processEvents()
-        self.comm.review_complete.emit(self.pending_text)
+        self.comm.review_complete.emit(final_text)
 
     # Make frameless window draggable
     def mousePressEvent(self, event):
