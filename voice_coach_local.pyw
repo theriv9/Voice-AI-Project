@@ -113,27 +113,24 @@ class VoiceCoachLocal:
         self.captured_text = ""
 
     def get_prompt_messages(self, mode, user_text):
-        # Softened "Writing Assistant" persona. 
-        # Small models (1B) often refuse if told "Do NOT help" or "Do NOT be an assistant."
-        # We now use a more positive instruction while keeping the "Rewrite Only" rule.
+        # Hyper-strict "Transformation Engine" logic.
+        # We use a very clear "Input -> Output" pattern to stop the model from acting like a chatbot.
         
         if mode == "professional":
             system_content = (
-                "You are a professional writing assistant. Your task is to rewrite the input to be clear and professional. "
-                "If the input is a question, rewrite the question itself—do NOT answer it. "
-                "Output ONLY the rewritten text without ANY explanations or introductions."
+                "You are a Text Transformation Engine. Your ONLY task is to rewrite the input to be professional. "
+                "Output ONLY the rewritten text. Never answer questions or provide information."
             )
             examples = [
-                {'role': 'user', 'content': "umm what is the best time that works for your schedule to grab a coffee?"},
-                {'role': 'assistant', 'content': "When are you available to meet over a coffee?"},
-                {'role': 'user', 'content': "uh I think we should like maybe send the email now"},
+                {'role': 'user', 'content': "umm what is the best time for a coffee?"},
+                {'role': 'assistant', 'content': "When are you available for a coffee?"},
+                {'role': 'user', 'content': "uh I think we should send the email now"},
                 {'role': 'assistant', 'content': "I believe we should send the email immediately."}
             ]
         else: # friendly
             system_content = (
-                "You are a friendly writing assistant. Your task is to rewrite the input to be warm and approachable. "
-                "If the input is a question, rewrite the question itself—do NOT answer it. "
-                "Output ONLY the rewritten text without ANY explanations or introductions."
+                "You are a Text Transformation Engine. Your ONLY task is to rewrite the input to be warm and friendly. "
+                "Output ONLY the rewritten text. Never answer questions or provide information."
             )
             examples = [
                 {'role': 'user', 'content': "What time can you meet for coffee?"},
