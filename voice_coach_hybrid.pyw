@@ -7,7 +7,7 @@ from pynput import keyboard
 from google import genai
 from dotenv import load_dotenv
 
-from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLabel
+from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLabel, QTextEdit, QHBoxLayout
 from PyQt6.QtCore import Qt, pyqtSignal, QObject, QTimer
 from PyQt6.QtGui import QCursor, QFont
 
@@ -22,6 +22,107 @@ LOCAL_MODEL = "llama3.2:1b"
 class Communicate(QObject):
     show_menu_signal = pyqtSignal()
     option_selected = pyqtSignal(str)
+    review_complete = pyqtSignal(str)
+
+class ReviewWindow(QWidget):
+    def __init__(self, comm):
+        super().__init__()
+        self.comm = comm
+        self.pending_text = ""
+        self.initUI()
+
+    def initUI(self):
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | 
+                            Qt.WindowType.WindowStaysOnTopHint | 
+                            Qt.WindowType.Tool)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        
+        layout = QVBoxLayout()
+        layout.setContentsMargins(10, 10, 10, 10)
+
+        self.container = QWidget()
+        self.container.setObjectName("container")
+        self.container.setStyleSheet("""
+            QWidget#container {
+                background-color: #1a1a1a;
+                border: 2px solid #0078d4;
+                border-radius: 12px;
+            }
+            QLabel#title {
+                color: #0078d4;
+                font-size: 11px;
+                font-weight: bold;
+                text-transform: uppercase;
+                margin-bottom: 4px;
+            }
+            QTextEdit {
+                background-color: #252525;
+                color: #ffffff;
+                border: 1px solid #333;
+                border-radius: 8px;
+                padding: 10px;
+                font-family: 'Segoe UI', sans-serif;
+                font-size: 14px;
+            }
+            QPushButton#accept {
+                background-color: #0078d4;
+                color: white;
+                border-radius: 6px;
+                padding: 8px;
+                font-weight: bold;
+            }
+            QPushButton#accept:hover {
+                background-color: #0086f1;
+            }
+            QPushButton#decline {
+                background-color: #333;
+                color: #ccc;
+                border-radius: 6px;
+                padding: 8px;
+            }
+        """)
+        
+        container_layout = QVBoxLayout(self.container)
+        
+        title = QLabel("Review AI Refinement")
+        title.setObjectName("title")
+        container_layout.addWidget(title)
+
+        self.text_area = QTextEdit()
+        self.text_area.setReadOnly(True)
+        self.text_area.setMinimumHeight(150)
+        self.text_area.setMinimumWidth(350)
+        container_layout.addWidget(self.text_area)
+
+        btn_layout = QHBoxLayout()
+        btn_decline = QPushButton("❌ Decline")
+        btn_decline.setObjectName("decline")
+        btn_decline.clicked.connect(self.hide)
+        
+        btn_accept = QPushButton("✅ Accept & Paste")
+        btn_accept.setObjectName("accept")
+        btn_accept.clicked.connect(self.handle_accept)
+        
+        btn_layout.addWidget(btn_decline)
+        btn_layout.addWidget(btn_accept)
+        container_layout.addLayout(btn_layout)
+
+        layout.addWidget(self.container)
+        self.setLayout(layout)
+
+    def handle_accept(self):
+        self.hide()
+        QApplication.processEvents()
+        self.comm.review_complete.emit(self.pending_text)
+
+    def show_review(self, text):
+        self.pending_text = text
+        self.text_area.setText(text)
+        pos = QCursor.pos()
+        self.move(pos.x() - 150, pos.y() - 100)
+        self.show()
+        self.raise_()
+        self.activateWindow()
 
 class PopupMenu(QWidget):
     def __init__(self, comm):
@@ -125,8 +226,10 @@ class VoiceCoachHybrid:
         self.comm = Communicate()
         self.comm.show_menu_signal.connect(self.trigger_ui)
         self.comm.option_selected.connect(self.process_selection)
+        self.comm.review_complete.connect(self.finalize_paste)
 
         self.menu = PopupMenu(self.comm)
+        self.review_window = ReviewWindow(self.comm)
         self.captured_text = ""
 
     def get_local_messages(self, user_text):
@@ -194,15 +297,22 @@ class VoiceCoachHybrid:
             if refined_text.startswith('"') and refined_text.endswith('"'):
                 refined_text = refined_text[1:-1]
             
-            pyperclip.copy(refined_text)
-            time.sleep(0.15)
-            
-            with self.controller.pressed(keyboard.Key.ctrl_l):
-                self.controller.tap('v')
-            print("[DEBUG] SUCCESS!", flush=True)
+            # Instead of auto-pasting, show the review window
+            print("[DEBUG] Showing Review Window...", flush=True)
+            self.review_window.show_review(refined_text)
 
         except Exception as e:
             print(f"[DEBUG] ERROR: {e}", flush=True)
+
+    def finalize_paste(self, text):
+        print("[DEBUG] User accepted. Finalizing paste...", flush=True)
+        time.sleep(0.2)
+        pyperclip.copy(text)
+        time.sleep(0.15)
+        
+        with self.controller.pressed(keyboard.Key.ctrl_l):
+            self.controller.tap('v')
+        print("[DEBUG] SUCCESS!", flush=True)
 
     def on_hotkey(self):
         time.sleep(0.1)
