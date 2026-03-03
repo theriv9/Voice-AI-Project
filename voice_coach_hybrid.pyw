@@ -291,13 +291,30 @@ class VoiceCoachHybrid:
 
     def get_meeting_notes_messages(self, user_text):
         system_content = (
-            "You are a professional scribe. Your task is to improve the grammar and formatting of meeting notes. "
-            "CRITICAL: Maintain the original sentiment and do NOT cut out any specific details. "
-            "Formatting Rules: Use clear bullet points and headers. Keep the language short and concise for future reading. "
-            "Output ONLY the improved notes without any introductory remarks."
+            "You are a professional scribe. Your task is to transform raw meeting notes into a structured, professional format. "
+            "CRITICAL: You must include three main sections with clear headers: "
+            "1. **Attendees**: List everyone mentioned. "
+            "2. **Meeting Notes**: Organize random notes into clear bullet points. "
+            "3. **Actions**: List any next steps or follow-up items. "
+            "Maintain all original details and sentiment. Keep it concise for future reading. "
+            "Output ONLY the structured notes without introductory remarks."
+        )
+        # Few-shot example for better structure adherence
+        example_in = "Bob and Alice met. bob will send the file. alice mentioned the budget is tight. also charlie was there."
+        example_out = (
+            "**Attendees**\n"
+            "- Bob\n"
+            "- Alice\n"
+            "- Charlie\n\n"
+            "**Meeting Notes**\n"
+            "- Budget constraints were discussed by Alice.\n\n"
+            "**Actions**\n"
+            "- Bob to send the file."
         )
         return [
             {'role': 'system', 'content': system_content},
+            {'role': 'user', 'content': example_in},
+            {'role': 'assistant', 'content': example_out},
             {'role': 'user', 'content': user_text}
         ]
 
