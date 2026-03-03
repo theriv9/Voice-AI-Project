@@ -292,11 +292,11 @@ class VoiceCoachHybrid:
     def get_meeting_notes_messages(self, user_text):
         system_content = (
             "You are a professional scribe. Your task is to transform raw meeting notes into a structured, professional format. "
-            "CRITICAL: You must include three main sections with clear headers: "
-            "1. **Attendees**: List everyone mentioned. "
-            "2. **Meeting Notes**: Organize random notes into clear bullet points. "
-            "3. **Actions**: List any next steps or follow-up items. "
-            "Maintain all original details and sentiment. Keep it concise for future reading. "
+            "CRITICAL RULES: "
+            "1. **Spelling**: Correct any spelling or grammar mistakes found in the raw notes. "
+            "2. **Bullets**: Use dashes (-) for all bullet points. Do NOT use asterisks (*). "
+            "3. **Sections**: You MUST include headers for **Attendees**, **Meeting Notes**, and **Actions**. "
+            "4. **Preservation**: Maintain all original details and sentiment. Keep it concise. "
             "Output ONLY the structured notes without introductory remarks."
         )
         # Few-shot example for better structure adherence
