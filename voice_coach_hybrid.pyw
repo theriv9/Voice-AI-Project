@@ -201,27 +201,23 @@ class PopupMenu(QWidget):
         container_layout.setContentsMargins(6, 6, 6, 6)
         container_layout.setSpacing(2)
 
-        # Gemini Section
-        header_gemini = QLabel("Cloud (Gemini)")
-        header_gemini.setObjectName("header")
-        container_layout.addWidget(header_gemini)
+        # Cloud Section
+        header_cloud = QLabel("Cloud-Based")
+        header_cloud.setObjectName("header")
+        container_layout.addWidget(header_cloud)
         
-        btn_gem_pro = QPushButton("✨ Professional Refine")
-        btn_gem_pro.clicked.connect(lambda: self.handle_click("gemini_professional"))
-        container_layout.addWidget(btn_gem_pro)
+        btn_gem_sum = QPushButton("Gemini Summarize")
+        btn_gem_sum.clicked.connect(lambda: self.handle_click("gemini_summarize"))
+        container_layout.addWidget(btn_gem_sum)
 
         # Local Section
-        header_local = QLabel("Local (Llama)")
+        header_local = QLabel("Local-Based")
         header_local.setObjectName("header")
         container_layout.addWidget(header_local)
         
-        btn_loc_friendly = QPushButton("😊 Friendly Rewrite")
-        btn_loc_friendly.clicked.connect(lambda: self.handle_click("local_friendly"))
-        container_layout.addWidget(btn_loc_friendly)
-
-        btn_loc_notes = QPushButton("📝 Meeting Notes cleanup")
-        btn_loc_notes.clicked.connect(lambda: self.handle_click("local_meeting_notes"))
-        container_layout.addWidget(btn_loc_notes)
+        btn_loc_sum = QPushButton("Ollama Summarize")
+        btn_loc_sum.clicked.connect(lambda: self.handle_click("ollama_summarize"))
+        container_layout.addWidget(btn_loc_sum)
 
         layout.addWidget(self.container)
         self.setLayout(layout)
@@ -273,48 +269,16 @@ class VoiceCoachHybrid:
         self.review_window = ReviewWindow(self.comm)
         self.captured_text = ""
 
-    def get_local_messages(self, user_text):
-        # Professional Editor persona with strict "Sentiment Preservation" rules.
-        system_content = (
-            "You are a professional editor. Your task is to rewrite the input to be warm and friendly. "
-            "CRITICAL: Keep the original sentiment, context, and all specific details exactly the same. "
-            "Simply improve the flow and tone without cutting out any of the user's original points. "
-            "Output ONLY the rewritten text. Do NOT include any 'Here is your text' or introductory remarks. "
-            "If the input is a question, rewrite the question itself, do not answer it."
+    def get_summary_prompt(self):
+        return (
+            "You are to receive text and your job is to summarize the sentiment of it to its entirety and improve spelling and grammar. "
+            "You are not to include any additional text other than the summarized text. "
+            "You are setting this to a business setting so ensure professional tone, friendliness, and try to sound human-like."
         )
-        return [
-            {'role': 'system', 'content': system_content},
-            {'role': 'user', 'content': "What time can you meet for coffee?"},
-            {'role': 'assistant', 'content': "Hey! Do you happen to know what time works best for you to grab a coffee together?"},
-            {'role': 'user', 'content': user_text}
-        ]
 
-    def get_meeting_notes_messages(self, user_text):
-        system_content = (
-            "You are a professional scribe. Your task is to transform raw meeting notes into a structured, professional format. "
-            "CRITICAL RULES: "
-            "1. **Spelling**: Correct any spelling or grammar mistakes found in the raw notes. "
-            "2. **Bullets**: Use dashes (-) for all bullet points. Do NOT use asterisks (*). "
-            "3. **Sections**: You MUST include headers for **Attendees**, **Meeting Notes**, and **Actions**. "
-            "4. **Preservation**: Maintain all original details and sentiment. Keep it concise. "
-            "Output ONLY the structured notes without introductory remarks."
-        )
-        # Few-shot example for better structure adherence
-        example_in = "Bob and Alice met. bob will send the file. alice mentioned the budget is tight. also charlie was there."
-        example_out = (
-            "**Attendees**\n"
-            "- Bob\n"
-            "- Alice\n"
-            "- Charlie\n\n"
-            "**Meeting Notes**\n"
-            "- Budget constraints were discussed by Alice.\n\n"
-            "**Actions**\n"
-            "- Bob to send the file."
-        )
+    def get_local_messages(self, user_text):
         return [
-            {'role': 'system', 'content': system_content},
-            {'role': 'user', 'content': example_in},
-            {'role': 'assistant', 'content': example_out},
+            {'role': 'system', 'content': self.get_summary_prompt()},
             {'role': 'user', 'content': user_text}
         ]
 
@@ -342,31 +306,22 @@ class VoiceCoachHybrid:
         if not self.captured_text: return
 
         try:
-            if mode == "gemini_professional":
+            if mode == "gemini_summarize":
                 if not self.gemini_client:
                     print("[DEBUG] ERROR: Gemini API Key missing or client not initialized.", flush=True)
                     return
                 print(f"[DEBUG] Calling Gemini ({GEMINI_MODEL})...", flush=True)
-                instr = "Take this raw transcription, fix grammar, and make it professional yet friendly. Return ONLY refined text."
                 response = self.gemini_client.models.generate_content(
                     model=GEMINI_MODEL,
                     contents=self.captured_text,
-                    config={'system_instruction': instr}
+                    config={'system_instruction': self.get_summary_prompt()}
                 )
                 refined_text = response.text.strip()
-            elif mode == "local_friendly":
-                print(f"[DEBUG] Calling Local Friendly ({LOCAL_MODEL})...", flush=True)
+            elif mode == "ollama_summarize":
+                print(f"[DEBUG] Calling Ollama ({LOCAL_MODEL})...", flush=True)
                 response = ollama.chat(
                     model=LOCAL_MODEL, 
                     messages=self.get_local_messages(self.captured_text),
-                    options={'temperature': 0}
-                )
-                refined_text = response['message']['content'].strip()
-            elif mode == "local_meeting_notes":
-                print(f"[DEBUG] Calling Local Meeting Notes ({LOCAL_MODEL})...", flush=True)
-                response = ollama.chat(
-                    model=LOCAL_MODEL, 
-                    messages=self.get_meeting_notes_messages(self.captured_text),
                     options={'temperature': 0}
                 )
                 refined_text = response['message']['content'].strip()
