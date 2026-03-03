@@ -115,11 +115,35 @@ class ReviewWindow(QWidget):
         QApplication.processEvents()
         self.comm.review_complete.emit(self.pending_text)
 
+    # Make frameless window draggable
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self._drag_pos = event.globalPosition().toPoint() - self.frameGeometry().topLeft()
+            event.accept()
+
+    def mouseMoveEvent(self, event):
+        if event.buttons() == Qt.MouseButton.LeftButton:
+            self.move(event.globalPosition().toPoint() - self._drag_pos)
+            event.accept()
+
     def show_review(self, text):
         self.pending_text = text
         self.text_area.setText(text)
+        
+        # Smart positioning: Ensure window stays on screen
+        screen = QApplication.primaryScreen().geometry()
         pos = QCursor.pos()
-        self.move(pos.x() - 150, pos.y() - 100)
+        
+        # Default offset
+        x = pos.x() - 150
+        y = pos.y() - 100
+        
+        # Constrain to screen boundaries
+        w, h = 380, 250 # Approximate dimensions
+        x = max(screen.left(), min(x, screen.right() - w))
+        y = max(screen.top(), min(y, screen.bottom() - h))
+        
+        self.move(x, y)
         self.show()
         self.raise_()
         self.activateWindow()
