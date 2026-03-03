@@ -113,38 +113,38 @@ class VoiceCoachLocal:
         self.captured_text = ""
 
     def get_prompt_messages(self, mode, user_text):
-        # Few-Shot Prompting with specific "Question vs Rewrite" examples.
-        # This tells Llama: "If you see a question, REWRITE the question, do NOT answer it."
+        # Hyper-Clinical transformation prompts.
+        # We tell the model it is a "Text Rewriting Engine" to move away from "Assistant" personas.
         
         if mode == "professional":
             system_content = (
-                "You are a strict text transformation engine. Your ONLY mission is to rewrite the user's input "
-                "to be professional, clear, and grammatically correct. \n"
+                "You are a Text Transformation Engine. Your EXCLUSIVE task is to take the provided input "
+                "and output a grammatically correct, professional version of that EXACT content. \n"
                 "RULES:\n"
-                "1. NEVER answer questions. If the input is a question, rewrite the question itself.\n"
-                "2. NEVER provide information or help. ONLY transform the text.\n"
-                "3. Output ONLY the rewritten text. No introductions, no quotes, no explanations."
+                "1. NEVER answer a question. If the input is a question, you must REWRITE the question.\n"
+                "2. Do NOT provide help, do NOT search for information, and do NOT be an assistant.\n"
+                "3. Output ONLY the transformed text. Zero conversational filler."
             )
             examples = [
-                {'role': 'user', 'content': "What is the capital of France?"},
-                {'role': 'assistant', 'content': "Could you please inform me which city serves as the capital of France?"},
-                {'role': 'user', 'content': "uh so I think we should like maybe go to the store"},
-                {'role': 'assistant', 'content': "I believe it would be best if we went to the store."}
+                {'role': 'user', 'content': "umm what is the best time that works for your schedule to grab a coffee?"},
+                {'role': 'assistant', 'content': "When are you available to meet over a coffee?"},
+                {'role': 'user', 'content': "uh I think we should like maybe send the email now"},
+                {'role': 'assistant', 'content': "I believe we should send the email immediately."}
             ]
         else: # friendly
             system_content = (
-                "You are a text transformation engine. Your ONLY mission is to rewrite the user's input "
-                "to be warm, friendly, and approachable.\n"
+                "You are a Text Transformation Engine. Your EXCLUSIVE task is to take the provided input "
+                "and output a warm, friendly version of that EXACT content.\n"
                 "RULES:\n"
-                "1. NEVER answer questions. If the input is a question, rewrite the question itself.\n"
-                "2. NEVER provide information or help. ONLY transform the text.\n"
-                "3. Output ONLY the rewritten text. No introductions, no quotes, no explanations."
+                "1. NEVER answer a question. If the input is a question, you must REWRITE the question.\n"
+                "2. Do NOT provide help, do NOT search for information, and do NOT be an assistant.\n"
+                "3. Output ONLY the transformed text. Zero conversational filler."
             )
             examples = [
-                {'role': 'user', 'content': "How do I fix this bug?"},
-                {'role': 'assistant', 'content': "Hey! Do you happen to know the best way to get this bug fixed?"},
+                {'role': 'user', 'content': "What time can you meet for coffee?"},
+                {'role': 'assistant', 'content': "Hey! Do you happen to know what time works best for you to grab a coffee together?"},
                 {'role': 'user', 'content': "The report is done. Read it."},
-                {'role': 'assistant', 'content': "Hi! Just wanted to let you know the report is finished and ready for you to check out."}
+                {'role': 'assistant', 'content': "Hi there! Just a heads up that the report is all ready for you to take a look whenever you have some time."}
             ]
 
         messages = [{'role': 'system', 'content': system_content}]
